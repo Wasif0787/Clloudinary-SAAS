@@ -15,11 +15,11 @@ const config: Config = {
       },
     },
   },
-  plugins: [
+  plugins: [ // Require the daisy ui plugin to use in the frontend
     require('daisyui'),
   ],
   daisyui: {
-    themes: ["light", "dark", "cupcake", "night"],
+    themes: ["light", "dark", "cupcake", "night"], // Themes available in the daisyui plugin
   },
 };
 export default config;

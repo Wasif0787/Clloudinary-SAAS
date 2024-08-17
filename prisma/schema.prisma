@@ -1,29 +1,52 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
+// This is your Prisma schema file, which defines your data model and database configuration.
+// Learn more about Prisma schema in the documentation: https://pris.ly/d/prisma-schema
 
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// If you're looking to optimize query performance or scale with serverless or edge functions,
+// consider using Prisma Accelerate: https://pris.ly/cli/accelerate-init
 
-// To migrate the neonDb into prisma use the following command
+// To apply migrations to your NeonDB database, use the following command:
 // npx prisma migrate dev --name init
+// It will create  MIGRATION folder inside prisma
 
+// Define the Prisma client generator, which will generate the Prisma Client based on this schema.
 generator client {
   provider = "prisma-client-js"
 }
 
+// Define the datasource for your PostgreSQL database. 
+// The `DATABASE_URL` environment variable should contain the connection string for your database.
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
+// Define the Video model, which represents a video record in your database.
+// Ensure each field is documented and meaningful for your application.
 model Video {
-  id             String   @id @default(cuid())
-  title          String
-  description    String?
-  publicId       String
-  originalSize   String
+  // Unique identifier for each video, automatically generated using cuid().
+  id String @id @default(cuid())
+
+  // Title of the video.
+  title String
+
+  // Optional description of the video.
+  description String?
+
+  // Public ID for the video, obtained from cloudinary
+  publicId String
+
+  // Size of the original video file.
+  originalSize String
+
+  // Size of the compressed video file.
   compressedSize String
-  duration       String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+
+  // Duration of the video, typically in a time format like "MM:SS" or "HH:MM:SS".
+  duration Float
+
+  // Timestamp indicating when the video record was created. Defaults to the current date and time.
+  createdAt DateTime @default(now())
+
+  // Timestamp indicating the last time the video record was updated. Automatically updated on each update.
+  updatedAt DateTime @updatedAt
 }
