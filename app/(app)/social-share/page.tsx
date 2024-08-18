@@ -2,6 +2,7 @@
 import { CldImage } from 'next-cloudinary';
 import React, { useEffect, useRef, useState } from 'react'
 
+// Social media formats with predefined dimensions and aspect ratios
 const socialFormats = {
     "Instagram Square (1:1)": { width: 1080, height: 1080, aspectRatio: "1:1" },
     "Instagram Portrait (4:5)": { width: 1080, height: 1350, aspectRatio: "4:5" },
@@ -10,21 +11,27 @@ const socialFormats = {
     "Facebook Cover (205:78)": { width: 820, height: 312, aspectRatio: "205:78" },
 };
 
+// Type alias for social format keys
 type SocialFormat = keyof typeof socialFormats
 
 const SocialShare = () => {
+    // State variables to manage image upload, format selection, upload and transformation status
     const [uploadedImage, setUploadedImage] = useState<string | null>(null)
     const [selectedFormat, setSelectedFormat] = useState<SocialFormat>("Instagram Square (1:1)")
     const [isUploading, setIsUploading] = useState(false)
     const [isTransforming, setIsTransforming] = useState(false)
+
+    // Ref to reference the image element
     const imageRef = useRef<HTMLImageElement>(null)
 
+    // Effect hook to trigger transformation whenever an image is uploaded or format is changed
     useEffect(() => {
         if (uploadedImage) {
             setIsTransforming(true)
         }
     }, [selectedFormat, uploadedImage])
 
+    // Function to handle file upload
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]
         if (!file) return
@@ -32,11 +39,13 @@ const SocialShare = () => {
         const formData = new FormData()
         formData.append('file', file)
         try {
+            // Send POST request to upload the file
             const response = await fetch("/api/image-upload", {
                 method: "POST",
                 body: formData
             })
             if (!response.ok) throw new Error("Failed to upload image")
+            // Get the Cloudinary public ID from the response
             const data = await response.json()
             setUploadedImage(data.publicId)
 
@@ -48,11 +57,14 @@ const SocialShare = () => {
         }
     }
 
+    // Function to handle downloading the transformed image
     const handleDownload = () => {
         if (!imageRef.current) return
+        // Fetch the image as a blob
         fetch(imageRef.current.src)
             .then((respomse) => respomse.blob())
             .then((blob) => {
+                // Create a download link and programmatically click it
                 const url = window.URL.createObjectURL(blob)
                 const link = document.createElement("a")
                 link.href = url
