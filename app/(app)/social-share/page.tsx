@@ -1,6 +1,8 @@
 "use client"
 import { CldImage } from 'next-cloudinary';
 import React, { useEffect, useRef, useState } from 'react'
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css'
 
 // Social media formats with predefined dimensions and aspect ratios
 const socialFormats = {
@@ -51,7 +53,7 @@ const SocialShare = () => {
 
         } catch (error) {
             console.log(error);
-            alert("Failed to upload image")
+            toast.error("Failed to upload image")
         } finally {
             setIsUploading(false)
         }
@@ -153,6 +155,7 @@ const SocialShare = () => {
                     )}
                 </div>
             </div>
+            <ToastContainer />
         </div>
     )
 }
