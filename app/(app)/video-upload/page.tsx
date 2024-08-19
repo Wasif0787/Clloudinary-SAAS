@@ -40,6 +40,7 @@ const VideoUpload = () => {
                 throw new Error('Upload failed')
             }
         } catch (error) {
+            console.log(error);
             toast.error('Failed to upload video')
         } finally {
             setIsUploading(false)
