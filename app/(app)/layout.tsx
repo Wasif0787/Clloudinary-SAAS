@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useClerk, useUser } from "@clerk/nextjs";
+import { SignedIn, SignedOut, SignInButton, SignOutButton, UserButton } from "@clerk/nextjs";
 import {
     LogOutIcon,
     MenuIcon,
@@ -11,12 +11,14 @@ import {
     Share2Icon,
     UploadIcon,
     ImageIcon,
+    PaintBucket
 } from "lucide-react";
 
 const sidebarItems = [
     { href: "/home", icon: LayoutDashboardIcon, label: "Home Page" },
     { href: "/social-share", icon: Share2Icon, label: "Social Share" },
     { href: "/video-upload", icon: UploadIcon, label: "Video Upload" },
+    { href: "/generative-fill", icon: PaintBucket, label: "Generative Fill" }
 ];
 
 export default function AppLayout({
@@ -27,15 +29,9 @@ export default function AppLayout({
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const pathname = usePathname();
     const router = useRouter();
-    const { signOut } = useClerk();
-    const { user } = useUser();
 
     const handleLogoClick = () => {
         router.push("/");
-    };
-
-    const handleSignOut = async () => {
-        await signOut();
     };
 
     return (
@@ -67,23 +63,9 @@ export default function AppLayout({
                                 </span>
                             </Link>
                         </div>
-                        {user && (
-                            <div className="flex-none flex items-center space-x-4">
-                                <div className="avatar">
-                                    <div className="w-10 h-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                                        <img
-                                            src={user.imageUrl}
-                                            alt={
-                                                user.username || user.emailAddresses[0].emailAddress
-                                            }
-                                        />
-                                    </div>
-                                </div>
-                                <span className="hidden sm:block text-sm truncate max-w-xs lg:max-w-md">
-                                    {user.firstName}
-                                </span>
-                            </div>
-                        )}
+                        <SignedIn>
+                            <UserButton />
+                        </SignedIn>
                     </div>
                 </header>
                 {/* Page content */}
@@ -116,17 +98,25 @@ export default function AppLayout({
                             </li>
                         ))}
                     </ul>
-                    {user && (
+                    <SignedIn>
                         <div className="p-4 border-t border-base-300">
-                            <button
-                                onClick={handleSignOut}
-                                className="btn btn-outline btn-error w-full flex items-center justify-center"
-                            >
-                                <LogOutIcon className="mr-2 h-5 w-5" />
-                                Sign Out
-                            </button>
+                            <SignOutButton redirectUrl={pathname}>
+                                <button className="btn btn-outline btn-error w-full flex items-center justify-center">
+                                    <LogOutIcon className="mr-2 h-5 w-5" />
+                                    Sign Out
+                                </button>
+                            </SignOutButton>
                         </div>
-                    )}
+                    </SignedIn>
+                    <SignedOut>
+                        <div className="p-4">
+                            <SignInButton mode="modal">
+                                <button className="btn btn-outline w-full flex items-center justify-center">
+                                    Sign In
+                                </button>
+                            </SignInButton>
+                        </div>
+                    </SignedOut>
                 </aside>
             </div>
         </div>

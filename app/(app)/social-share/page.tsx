@@ -83,7 +83,6 @@ const SocialShare = () => {
             <h1 className="text-3xl font-bold mb-6 text-center">
                 Social Media Image Creator
             </h1>
-
             <div className="card">
                 <div className="card-body">
                     <h2 className="card-title mb-4">Upload an Image</h2>
