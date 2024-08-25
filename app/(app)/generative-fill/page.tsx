@@ -4,79 +4,121 @@ import React, { useEffect, useRef, useState } from 'react'
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css'
 
-const Page = () => {
-    const [uploadedImage, setUploadedImage] = useState<string | null>(null)
+const GenerativeFill = () => {
     const [isUploading, setIsUploading] = useState(false)
-    const [isTransforming, setIsTransforming] = useState(false)
-    const [uploadedImageWidth, setUploadedImageWidth] = useState<number>(300)
-    const [uploadedImageHeight, setUploadedImageHeight] = useState<number>(300)
-    const [transformedImageWidth, setTransformedImageWidth] = useState<number | "">(300)
-    const [transformedImageHeight, setTransformedImageHeight] = useState<number | "">(300)
-    const [generateImage, setGenerateImage] = useState(false)
+    const [uploadedImage, setUploadedImage] = useState<string | null>(null)
+    const [generatedImage, setGeneratedImage] = useState<string | null>(null)
+    const [originalImageWidth, setOriginalImageWidth] = useState('')
+    const [originalImageHeight, setOriginalImageHeight] = useState('')
+    const [transformedImageWidth, setTransformedImageWidth] = useState('')
+    const [transformedImageHeight, setTransformedImageHeight] = useState('')
+    const [transformingOriginalImage, setTransformingOriginalImage] = useState(false)
+    const [transformingGenerativeImage, setTransformingGenerativeImage] = useState(false)
 
-    const imageRef = useRef<HTMLImageElement>(null)
+    const originalImageRef = useRef<HTMLImageElement>(null)
+    const generativeImageRef = useRef<HTMLImageElement>(null)
 
     useEffect(() => {
-        if (uploadedImage || generateImage) {
-            setIsTransforming(true)
+        if (uploadedImage) {
+            setTransformingOriginalImage(true)
         }
-    }, [uploadedImage, generateImage])
+    }, [uploadedImage])
 
+    // Function to handle file upload
     const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0]
         if (!file) return
-        setIsUploading(true)
+        // Reset state
+        resetState()
         const img = new Image()
         img.src = URL.createObjectURL(file);
         img.onload = () => {
-            setUploadedImageHeight(img.height)
-            setUploadedImageWidth(img.width)
-            setTransformedImageHeight(img.height)
-            setTransformedImageWidth(img.width)
+            const width = String(img.width);
+            const height = String(img.height);
+            setOriginalImageWidth(width);
+            setOriginalImageHeight(height);
+            setTransformedImageWidth(width);
+            setTransformedImageHeight(height);
         }
+        setIsUploading(true)
         const formData = new FormData()
         formData.append('file', file)
         try {
+            // Send POST request to upload the file
             const response = await fetch("/api/image-upload", {
                 method: "POST",
                 body: formData
             })
             if (!response.ok) throw new Error("Failed to upload image")
+            // Get the Cloudinary public ID from the response
             const data = await response.json()
             setUploadedImage(data.publicId)
         } catch (error) {
-            console.error(error)
+            console.log(error);
             toast.error("Failed to upload image")
         } finally {
             setIsUploading(false)
         }
     }
 
+    const handleImageWidthChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setTransformedImageWidth(event.target.value)
+        setGeneratedImage(null) // Reset the generated image when dimensions are changed
+    }
+
+    const handleImageHeightChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setTransformedImageHeight(event.target.value)
+        setGeneratedImage(null) // Reset the generated image when dimensions are changed
+    }
+
+    const handleGenerate = () => {
+        setGeneratedImage(uploadedImage)
+        setTransformingGenerativeImage(true)
+    }
+
+    // Function to handle downloading the transformed image
     const handleDownload = () => {
-        if (!imageRef.current) return
-        fetch(imageRef.current.src)
-            .then(response => response.blob())
-            .then(blob => {
-                const url = window.URL.createObjectURL(blob)
-                const link = document.createElement("a")
-                link.href = url
-                link.download = `generated_image.png`
-                document.body.appendChild(link)
-                link.click()
-                window.URL.revokeObjectURL(url)
-                document.body.removeChild(link)
-            })
+        const currentImageRef = generativeImageRef.current;
+        if (!currentImageRef) return; // Safely handle undefined case
+
+        fetch(currentImageRef.src)
+            .then((response) => response.blob())
+            .then((blob) => {
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement("a");
+                link.href = url;
+                link.download = "generatedImage.png"
+                document.body.appendChild(link);
+                link.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(link);
+            });
+    }
+
+
+    // Reset all state
+    const resetState = () => {
+        setUploadedImage(null)
+        setGeneratedImage(null)
+        setOriginalImageWidth('')
+        setOriginalImageHeight('')
+        setTransformedImageWidth('')
+        setTransformedImageHeight('')
+        setTransformingOriginalImage(false)
+        setTransformingGenerativeImage(false)
     }
 
     return (
         <div className="container mx-auto p-4 max-w-4xl">
-            <h1 className="text-3xl font-bold mb-6 text-center">Generative Fill Images</h1>
-            <div className="card bg-base-200 shadow-xl">
+            <h1 className="text-4xl font-bold mb-8 text-center text-primary">
+                Generative Fill Images
+            </h1>
+            <div className="card bg-base-200 shadow-lg">
                 <div className="card-body">
-                    <h2 className="card-title mb-4">Upload an Image</h2>
-                    <div className="form-control mb-4">
+                    <h2 className="card-title mb-6 text-lg font-semibold text-secondary">Upload an Image</h2>
+                    <div className="form-control mb-6">
                         <label className="label">
-                            <span className="label-text">Choose an image file</span>
+                            <span className="label-text text-secondary">Choose an image file</span>
                         </label>
                         <input
                             type="file"
@@ -84,101 +126,93 @@ const Page = () => {
                             className="file-input file-input-bordered file-input-primary w-full"
                         />
                     </div>
-
                     {isUploading && (
-                        <div className="w-full flex justify-center mt-4">
-                            <div className="relative w-24 h-24">
-                                <div className="absolute inset-0 flex items-center justify-center bg-base-100 bg-opacity-50 z-10">
-                                    <span className="loading loading-spinner loading-lg"></span>
-                                </div>
-                                <div className="w-24 h-24 border border-gray-300 rounded-full flex items-center justify-center">
-                                    <span className="text-gray-600">Uploading...</span>
-                                </div>
-                            </div>
+                        <div className="mt-4">
+                            <progress className="progress progress-primary w-full"></progress>
                         </div>
                     )}
-
                     {uploadedImage && (
-                        <div className="mt-6">
-                            <h3 className="text-lg font-semibold mb-2">Original:</h3>
-                            <div className="relative">
-                                <div className="flex justify-center">
-                                    {isTransforming && !isUploading && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-base-100 bg-opacity-50 z-10">
-                                            <span className="loading loading-spinner loading-lg"></span>
-                                        </div>
-                                    )}
-                                    <CldImage
-                                        width={uploadedImageWidth}
-                                        height={uploadedImageHeight}
-                                        src={uploadedImage}
-                                        sizes="100vw"
-                                        alt="Original Image"
-                                        ref={imageRef}
-                                        onLoad={() => setIsTransforming(false)}
+                        <div className="mt-8">
+                            <h3 className="text-lg font-semibold mb-4 text-secondary">Original Image Preview:</h3>
+                            <div className="flex justify-center mb-8 relative">
+                                {transformingOriginalImage && (
+                                    <div className="absolute inset-0 flex items-center justify-center bg-base-100 bg-opacity-50 z-10">
+                                        <span className="loading loading-spinner loading-lg"></span>
+                                    </div>
+                                )}
+                                <CldImage
+                                    width={Number(originalImageWidth)}
+                                    height={Number(originalImageHeight)}
+                                    src={uploadedImage}
+                                    sizes="100vw"
+                                    crop="fill"
+                                    alt='Original Image Preview'
+                                    gravity='auto'
+                                    ref={originalImageRef}
+                                    onLoad={() => setTransformingOriginalImage(false)}
+                                />
+                            </div>
+                            <h2 className="card-title mb-6 text-lg font-semibold text-secondary">Select Width and Height</h2>
+                            <div className="form-control grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="label">
+                                        <span className="label-text text-secondary">Width</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        className="input input-bordered w-full text-white bg-primary"
+                                        value={transformedImageWidth}
+                                        onChange={handleImageWidthChange}
+                                        placeholder={originalImageWidth}
+                                    />
+                                </div>
+                                <div>
+                                    <label className="label">
+                                        <span className="label-text text-secondary">Height</span>
+                                    </label>
+                                    <input
+                                        type="number"
+                                        className="input input-bordered w-full text-white bg-primary"
+                                        value={transformedImageHeight}
+                                        onChange={handleImageHeightChange}
+                                        placeholder={originalImageHeight}
                                     />
                                 </div>
                             </div>
-
-                            <div className="mt-4">
-                                <label className="label">
-                                    <span className="label-text">Transform Width:</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    onChange={(e) => setTransformedImageWidth(e.target.value ? Number(e.target.value) : "")}
-                                    value={transformedImageWidth === "" ? "" : transformedImageWidth}
-                                    className="input input-bordered w-full"
-                                    placeholder="Width"
-                                />
-                                <label className="label mt-2">
-                                    <span className="label-text">Transform Height:</span>
-                                </label>
-                                <input
-                                    type="number"
-                                    onChange={(e) => setTransformedImageHeight(e.target.value ? Number(e.target.value) : "")}
-                                    value={transformedImageHeight === "" ? "" : transformedImageHeight}
-                                    className="input input-bordered w-full"
-                                    placeholder="Height"
-                                />
-                            </div>
-
                             <div className="card-actions justify-end mt-6">
-                                <button className="btn btn-primary" onClick={() => setGenerateImage(true)}>
-                                    Transform
+                                <button className="btn btn-primary" onClick={handleGenerate} disabled={transformingGenerativeImage}>
+                                    Generate
                                 </button>
                             </div>
-                        </div>
-                    )}
-
-                    {generateImage && uploadedImage && (
-                        <div className="mt-6">
-                            <h3 className="text-lg font-semibold mb-2">Generated:</h3>
-                            <div className="relative">
-                                <div className="flex justify-center">
-                                    {isTransforming && !isUploading && (
-                                        <div className="absolute inset-0 flex items-center justify-center bg-base-100 bg-opacity-50 z-10">
-                                            <span className="loading loading-spinner loading-lg"></span>
-                                        </div>
-                                    )}
-                                    <CldImage
-                                        width={transformedImageWidth || uploadedImageWidth}
-                                        height={transformedImageHeight || uploadedImageHeight}
-                                        src={uploadedImage}
-                                        sizes="100vw"
-                                        alt="Generated Image"
-                                        ref={imageRef}
-                                        fillBackground
-                                        onLoad={() => setIsTransforming(false)}
-                                    />
+                            {generatedImage && (
+                                <div className="mt-8">
+                                    <h3 className="text-lg font-semibold mb-4 text-secondary">Generated Image Preview:</h3>
+                                    <div className="flex justify-center mb-8 relative">
+                                        {transformingGenerativeImage && (
+                                            <div className="absolute inset-0 flex items-center justify-center bg-base-100 bg-opacity-50 z-10">
+                                                <span className="loading loading-spinner loading-lg"></span>
+                                            </div>
+                                        )}
+                                        <CldImage
+                                            width={Number(transformedImageWidth)}
+                                            height={Number(transformedImageHeight)}
+                                            src={uploadedImage}
+                                            sizes="100vw"
+                                            crop="fill"
+                                            alt='Generated Image Preview'
+                                            gravity='auto'
+                                            fillBackground
+                                            ref={generativeImageRef}
+                                            onLoad={() => setTransformingGenerativeImage(false)}
+                                        />
+                                    </div>
+                                    <div className="card-actions justify-end">
+                                        <button className="btn btn-primary" onClick={handleDownload}>
+                                            Download
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div className="card-actions justify-end mt-6">
-                                <button className="btn btn-primary" onClick={handleDownload}>
-                                    Download
-                                </button>
-                            </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -188,4 +222,4 @@ const Page = () => {
     )
 }
 
-export default Page
+export default GenerativeFill
