@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -18,7 +17,7 @@ const sidebarItems = [
     { href: "/home", icon: LayoutDashboardIcon, label: "Home Page" },
     { href: "/social-share", icon: Share2Icon, label: "Social Share" },
     { href: "/video-upload", icon: UploadIcon, label: "Video Upload" },
-    { href: "/generative-fill", icon: PaintBucket, label: "Generative Fill" }
+    { href: "/generative-fill", icon: PaintBucket, label: "Generative Fill" },
 ];
 
 export default function AppLayout({
@@ -33,6 +32,11 @@ export default function AppLayout({
     const handleLogoClick = () => {
         router.push("/");
     };
+
+    const hanldeSidebarItemClick = (link: string) => {
+        setSidebarOpen(false)
+        router.push(link)
+    }
 
     return (
         <div className="drawer lg:drawer-open">
@@ -84,17 +88,16 @@ export default function AppLayout({
                     <ul className="menu p-4 w-full text-base-content flex-grow">
                         {sidebarItems.map((item) => (
                             <li key={item.href} className="mb-2">
-                                <Link
-                                    href={item.href}
-                                    className={`flex items-center space-x-4 px-4 py-2 rounded-lg transition-all duration-200 ${pathname === item.href
+                                <div
+                                    className={`flex items-center space-x-4 px-4 py-2 rounded-lg cursor-pointer transition-all duration-200 ${pathname === item.href
                                         ? "bg-primary text-white shadow-md"
                                         : "hover:bg-base-300"
                                         }`}
-                                    onClick={() => setSidebarOpen(false)}
+                                    onClick={() => hanldeSidebarItemClick(item.href)}
                                 >
                                     <item.icon className="w-6 h-6" />
                                     <span>{item.label}</span>
-                                </Link>
+                                </div>
                             </li>
                         ))}
                     </ul>
@@ -119,6 +122,6 @@ export default function AppLayout({
                     </SignedOut>
                 </aside>
             </div>
-        </div>
+        </div >
     );
 }
